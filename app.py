@@ -2,10 +2,8 @@ import streamlit as st
 import yt_dlp
 import os
 
-# 1. Page Configuration
 st.set_page_config(page_title="SnapFetch AI", page_icon="🚀", layout="centered")
 
-# CSS for Premium Look
 st.markdown("""
     <style>
         :root { --slate-950: #020617; --text-main: #e2e8f0; }
@@ -18,14 +16,12 @@ st.markdown("""
 
 st.markdown('<div style="text-align:center;"><h1>✦ SnapFetch AI</h1><p style="color:#94a3b8;">Universal Cloud Media Capture</p></div>', unsafe_allow_html=True)
 
-# 2. UI Card
 with st.container():
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
     url = st.text_input("Media URL", placeholder="Paste your video link here...")
     fetch_clicked = st.button("Unlock Media")
     st.markdown('</div>', unsafe_allow_html=True)
 
-# 3. Download Execution Loop
 if fetch_clicked:
     if not url:
         st.toast("Please paste a valid link first!", icon="⚠️")
@@ -33,61 +29,44 @@ if fetch_clicked:
         temp_base = "downloaded_video"
         temp_file = f"{temp_base}.mp4"
         
-        if os.path.exists(temp_file):
-            os.remove(temp_file)
-        if os.path.exists(temp_base):
-            os.remove(temp_base)
+        if os.path.exists(temp_file): os.remove(temp_file)
+        if os.path.exists(temp_base): os.remove(temp_base)
 
-        with st.status("Executing Stealth Bypass...", expanded=True) as status:
+        with st.status("Processing link locally...", expanded=True) as status:
             try:
-                # Fixed spacing directly below to sit perfectly in line
                 ydl_opts = {
-                    'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-                    'merge_output_format': 'mp4',
+                    # This fallback format selector handles both generic and platform-specific video packets
+                    'format': 'bestvideo+bestaudio/best',
                     'outtmpl': temp_base,
-                    'cookiefile': 'cookies.txt',
                     'quiet': False,
                     'nocheckcertificate': True,
                     'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
-                    'referer': 'https://www.youtube.com/',
-                    'http_headers': {
-                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-                        'Accept-Language': 'en-US,en;q=0.5',
-                        'Connection': 'keep-alive',
-                    }
                 }
-                status.write("Piercing cloud blocks & capturing streams...")
+                status.write("Capturing stream from your home IP...")
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     ydl.download([url.strip()])
 
-                # Fallback renaming logic
+                # Handle dynamic extension outcomes
                 if not os.path.exists(temp_file) and os.path.exists(temp_base):
                     os.rename(temp_base, temp_file)
                 if not os.path.exists(temp_file) and os.path.exists(f"{temp_base}.mkv"):
                     os.rename(f"{temp_base}.mkv", temp_file)
+                if not os.path.exists(temp_file) and os.path.exists(f"{temp_base}.mp4"):
+                    os.rename(f"{temp_base}.mp4", temp_file)
 
                 if os.path.exists(temp_file):
-                    status.write("Finalizing media payload...")
+                    status.write("Loading file...")
                     with open(temp_file, "rb") as f:
                         video_bytes = f.read()
                     
-                    status.update(label="Media Successfully Unlocked!", state="complete")
-                    
+                    status.update(label="Media Unlocked!", state="complete")
                     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-                    st.success("Your file is ready for download!")
-                    st.download_button(
-                        label="⬇️ Save MP4 to Device",
-                        data=video_bytes,
-                        file_name="SnapFetch_Media.mp4",
-                        mime="video/mp4",
-                        use_container_width=True
-                    )
+                    st.success("Ready!")
+                    st.download_button(label="⬇️ Save MP4 to Device", data=video_bytes, file_name="SnapFetch_Media.mp4", mime="video/mp4", use_container_width=True)
                     st.markdown('</div>', unsafe_allow_html=True)
-                    
                 else:
-                    status.update(label="Platform Block Active", state="error")
-                    st.error("Platform blocked this specific server IP. Please reboot the app via Streamlit Dashboard.")
-                    
+                    status.update(label="Failed", state="error")
+                    st.error("File downloaded but could not be processed. Try again.")
             except Exception as e:
-                status.update(label="System Blocked", state="error")
+                status.update(label="Error", state="error")
                 st.error(f"Reason: {str(e)}")

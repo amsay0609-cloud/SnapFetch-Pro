@@ -21,7 +21,7 @@ st.markdown('<div style="text-align:center;"><h1>✦ SnapFetch AI</h1><p style="
 # 2. UI Card
 with st.container():
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    url = st.text_input("Media URL", placeholder="Paste your video link here...")
+    url = st.text_input("Media URL", placeholder="Paste actual video or pin link here...")
     fetch_clicked = st.button("Unlock Media")
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -29,11 +29,12 @@ with st.container():
 if fetch_clicked:
     if not url:
         st.toast("Please paste a valid link first!", icon="⚠️")
+    elif url.strip() in ["https://www.pinterest.com/", "https://pinterest.com", "https://www.youtube.com/", "https://youtube.com"]:
+        st.error("Bhai, yeh website ka homepage hai. Kripya kisi actual video ya pin ka specific link paste karein!")
     else:
         temp_base = "downloaded_video"
         temp_file = f"{temp_base}.mp4"
         
-        # Purani temporary files delete karein
         if os.path.exists(temp_file):
             os.remove(temp_file)
         if os.path.exists(temp_base):
@@ -41,7 +42,6 @@ if fetch_clicked:
 
         with st.status("Extracting cloud streams...", expanded=True) as status:
             try:
-                # Optimized Engine Config
                 ydl_opts = {
                     'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
                     'merge_output_format': 'mp4',
@@ -55,13 +55,11 @@ if fetch_clicked:
 
                 status.write("Bypassing server restrictions...")
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    ydl.download([url])
+                    ydl.download([url.strip()])
 
-                # Muxing/Extension Fallback Check
                 if not os.path.exists(temp_file) and os.path.exists(temp_base):
                     os.rename(temp_base, temp_file)
 
-                # Successful verification
                 if os.path.exists(temp_file):
                     status.write("Loading decrypted file bytes...")
                     with open(temp_file, "rb") as f:
@@ -69,7 +67,6 @@ if fetch_clicked:
                     
                     status.update(label="Media Fully Unlocked!", state="complete")
                     
-                    # Direct placement: Bina rerun kiye green button card ke niche load hoga
                     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
                     st.success("Your file is ready for download!")
                     st.download_button(
@@ -83,16 +80,11 @@ if fetch_clicked:
                     
                 else:
                     status.update(label="Extraction Failed", state="error")
-                    st.error("Platform blocked the request. Please update your cookies.txt file.")
+                    st.error("Platform blocked the request. Try checking your link or updating cookies.txt.")
                     
             except Exception as e:
                 status.update(label="System Error", state="error")
-                st.error(f"Reason: {str(e)}")
-
-# Bottom guide info
-st.markdown("""
-    <div style="background: rgba(15, 23, 42, 0.6); padding: 1rem; border-radius: 15px; font-size: 0.9rem; color: #94a3b8;">
-        <b>Quick Troubleshooting:</b><br>
-        • If it still shows errors, open YouTube in an Incognito Tab, refresh your account, export the fresh <b>cookies.txt</b>, and overwrite it on GitHub.
-    </div>
-""", unsafe_allow_html=True)
+                if "Unsupported URL" in str(e):
+                    st.error("Error: Yeh URL sahi nahi hai. Kripya kisi post/video ka direct link dalein.")
+                else:
+                    st.error(f"Reason: {str(e)}")

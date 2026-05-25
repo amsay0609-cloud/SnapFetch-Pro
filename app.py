@@ -21,7 +21,7 @@ st.markdown('<div style="text-align:center;"><h1>✦ SnapFetch AI</h1><p style="
 # 2. UI Card
 with st.container():
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    url = st.text_input("Media URL", placeholder="Paste actual video or pin link here...")
+    url = st.text_input("Media URL", placeholder="Paste your video link here...")
     fetch_clicked = st.button("Unlock Media")
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -29,8 +29,6 @@ with st.container():
 if fetch_clicked:
     if not url:
         st.toast("Please paste a valid link first!", icon="⚠️")
-    elif url.strip() in ["https://www.pinterest.com/", "https://pinterest.com", "https://www.youtube.com/", "https://youtube.com"]:
-        st.error("Bhai, yeh website ka homepage hai. Kripya kisi actual video ya pin ka specific link paste karein!")
     else:
         temp_base = "downloaded_video"
         temp_file = f"{temp_base}.mp4"
@@ -40,32 +38,44 @@ if fetch_clicked:
         if os.path.exists(temp_base):
             os.remove(temp_base)
 
-        with st.status("Extracting cloud streams...", expanded=True) as status:
+        with st.status("Executing Stealth Bypass...", expanded=True) as status:
             try:
+                # Upgraded Options: Mimicking a real android device app connection
                 ydl_opts = {
-                    'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-                    'merge_output_format': 'mp4',
+                    'format': 'best', # Single integrated stream for maximum compatibility
                     'outtmpl': temp_base,
                     'cookiefile': 'cookies.txt',
                     'quiet': False,
                     'nocheckcertificate': True,
-                    'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
-                    'referer': 'https://www.google.com/'
+                    'user_agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
+                    'referer': 'https://www.pinterest.com/',
+                    'extractor_args': {
+                        'pinterest': {'skip': ['dash', 'hls']} # Avoid complex formats if blocked
+                    },
+                    'http_headers': {
+                        'Accept': '*/*',
+                        'Accept-Language': 'en-US,en;q=0.9',
+                        'Sec-Fetch-Mode': 'cors',
+                        'Sec-Fetch-Site': 'same-site'
+                    }
                 }
 
-                status.write("Bypassing server restrictions...")
+                status.write("Piercing cloud blocks & capturing streams...")
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     ydl.download([url.strip()])
 
+                # Fallback renaming logic
                 if not os.path.exists(temp_file) and os.path.exists(temp_base):
                     os.rename(temp_base, temp_file)
+                if not os.path.exists(temp_file) and os.path.exists(f"{temp_base}.mkv"):
+                    os.rename(f"{temp_base}.mkv", temp_file)
 
                 if os.path.exists(temp_file):
-                    status.write("Loading decrypted file bytes...")
+                    status.write("Finalizing media payload...")
                     with open(temp_file, "rb") as f:
                         video_bytes = f.read()
                     
-                    status.update(label="Media Fully Unlocked!", state="complete")
+                    status.update(label="Media Successfully Unlocked!", state="complete")
                     
                     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
                     st.success("Your file is ready for download!")
@@ -79,12 +89,9 @@ if fetch_clicked:
                     st.markdown('</div>', unsafe_allow_html=True)
                     
                 else:
-                    status.update(label="Extraction Failed", state="error")
-                    st.error("Platform blocked the request. Try checking your link or updating cookies.txt.")
+                    status.update(label="Platform Block Active", state="error")
+                    st.error("Pinterest blocked this specific server IP. Please reboot the app via Streamlit Dashboard.")
                     
             except Exception as e:
-                status.update(label="System Error", state="error")
-                if "Unsupported URL" in str(e):
-                    st.error("Error: Yeh URL sahi nahi hai. Kripya kisi post/video ka direct link dalein.")
-                else:
-                    st.error(f"Reason: {str(e)}")
+                status.update(label="System Blocked", state="error")
+                st.error(f"Reason: {str(e)}")

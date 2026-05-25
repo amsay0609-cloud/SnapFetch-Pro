@@ -5,13 +5,11 @@ import os
 # 1. Page Setup
 st.set_page_config(page_title="SnapFetch AI", page_icon="🚀", layout="centered")
 
-# Initialize Session States
 if "video_ready" not in st.session_state:
     st.session_state.video_ready = False
 if "video_bytes" not in st.session_state:
     st.session_state.video_bytes = b""
 
-# Premium UI Styling
 st.markdown("""
     <style>
         :root { --slate-950: #020617; --text-main: #e2e8f0; }
@@ -22,12 +20,11 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div style="text-align:center;"><h1>✦ SnapFetch AI</h1><p style="color:#94a3b8;">High-Quality Media Cloud Fetcher</p></div>', unsafe_allow_html=True)
+st.markdown('<div style="text-align:center;"><h1>✦ SnapFetch AI</h1><p style="color:#94a3b8;">High-Quality Multi-Platform Cloud Fetcher</p></div>', unsafe_allow_html=True)
 
-# 2. Interface
 with st.container():
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    url = st.text_input("Media URL", placeholder="Paste YouTube or Pinterest link here...")
+    url = st.text_input("Media URL", placeholder="Paste YouTube, Facebook, or Pinterest link here...")
     fetch_clicked = st.button("Unlock Media")
 
     if st.session_state.video_ready:
@@ -40,61 +37,53 @@ with st.container():
         )
     st.markdown('</div>', unsafe_allow_html=True)
 
-# 3. Download Logic
 if fetch_clicked:
     if not url:
         st.toast("Please paste a URL!", icon="⚠️")
     else:
-        # File name management
         temp_base = "downloaded_video"
         temp_file = f"{temp_base}.mp4"
         
         st.session_state.video_ready = False
         st.session_state.video_bytes = b""
 
-        with st.status("Initializing AI Fetcher...", expanded=True) as status:
+        with st.status("Initializing Stealth Fetcher...", expanded=True) as status:
             try:
-                # Cleanup old files
                 if os.path.exists(temp_file):
                     os.remove(temp_file)
 
+                # Yeh modern config platforms ko lagega ki request normal human browser se aa rahi hai
                 ydl_opts = {
-                    # Best quality merging logic (Requires ffmpeg in packages.txt)
                     'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
                     'merge_output_format': 'mp4',
-                    'outtmpl': temp_base, # yt-dlp will add .mp4 automatically after merging
+                    'outtmpl': temp_base,
                     'cookiefile': 'cookies.txt',
                     'quiet': False,
                     'nocheckcertificate': True,
-                    'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+                    'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+                    'referer': 'https://www.google.com/',
+                    'http_headers': {
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                        'Accept-Language': 'en-US,en;q=0.5',
+                        'Sec-Fetch-Mode': 'navigate'
+                    }
                 }
 
-                status.write("Downloading streams & bypassing protocols...")
+                status.write("Bypassing firewalls & downloading streams...")
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     ydl.download([url])
 
-                # Check if file exists after merging
                 if os.path.exists(temp_file):
-                    status.write("Finalizing media encryption...")
+                    status.write("Finalizing high-speed conversion...")
                     with open(temp_file, "rb") as f:
                         st.session_state.video_bytes = f.read()
                     st.session_state.video_ready = True
-                    status.update(label="Media Successfully Unlocked!", state="complete")
+                    status.update(label="Media Ready!", state="complete")
                     st.rerun()
                 else:
-                    status.update(label="File Merger Error", state="error")
-                    st.error("Make sure 'packages.txt' contains 'ffmpeg'.")
+                    status.update(label="Media extraction failed.", state="error")
+                    st.error("Server block active. Please refresh cookies.txt or reboot the app.")
 
             except Exception as e:
                 status.update(label="Unlock Failed", state="error")
                 st.error(f"Reason: {str(e)}")
-
-# Instructions
-st.markdown("""
-    <div style="background: rgba(15, 23, 42, 0.6); padding: 1rem; border-radius: 15px; margin-top: 1rem; font-size: 0.9rem; color: #94a3b8;">
-        <b>How to use:</b><br>
-        1. Paste any valid media link.<br>
-        2. Wait for the AI to fetch and merge high-quality streams.<br>
-        3. Once 'Media Ready' appears, click Download.
-    </div>
-""", unsafe_allow_html=True)

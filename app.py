@@ -29,34 +29,36 @@ if fetch_clicked:
         st.toast("Please paste a valid link first!", icon="⚠️")
     else:
         temp_file = "downloaded_video.mp4"
-        if os.path.exists(temp_file):
-            try: os.remove(temp_file)
-            except: pass
+        
+        # Clean up any leftover files from previous attempts
+        for ext in [".mp4", ".mkv", ".webm", ".mp4.part"]:
+            if os.path.exists("downloaded_video" + ext):
+                try: os.remove("downloaded_video" + ext)
+                except: pass
 
         with st.status("Processing link locally...", expanded=True) as status:
             try:
                 ydl_opts = {
-                                    'format': 'best',
-                                    'outtmpl': temp_base + '.%(ext)s',
-                                    'quiet': False,
-                                    'nocheckcertificate': True,
-                                    'cookiesfrombrowser': ('chrome',), 
-                                    'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-    
-                                     # ADD THIS BLOCK BELOW 👇
-                                    'postprocessors': [{
-                                    'key': 'FFmpegVideoConvertor',
-                                    'preferedformat': 'mp4',  # Forces FFmpeg to remux/re-encode into a standard, universal MP4 layout
-                                      }],
-                                      } 
+                    'format': 'best',
+                    'outtmpl': 'downloaded_video.%(ext)s',
+                    'quiet': False,
+                    'nocheckcertificate': True,
+                    'cookiesfrombrowser': ('chrome',),  # Change to 'edge' or 'firefox' if needed
+                    'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+                    'postprocessors': [{
+                        'key': 'FFmpegVideoConvertor',
+                        'preferedformat': 'mp4',
+                    }],
+                }
                 
                 status.write("Analyzing page architecture...")
                 cleaned_url = url.strip()
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     ydl.download([cleaned_url])
 
+                # Look for the processed file
                 found_file = None
-                for ext in [".mp4", ".mkv", ".webm", ""]:
+                for ext in [".mp4", ".mkv", ".webm"]:
                     if os.path.exists("downloaded_video" + ext):
                         found_file = "downloaded_video" + ext
                         break
@@ -81,19 +83,13 @@ if fetch_clicked:
                     
                     headers = {
                         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-                        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-                        "Accept-Language": "en-US,en;q=0.5"
                     }
                     
-                    # Create a persistent session to hold headers across mobile redirects
                     session = requests.Session()
                     session.headers.update(headers)
-                    
-                    # Resolve short URL first
                     response = session.get(cleaned_url, allow_redirects=True)
                     page_source = response.text
                     
-                    # Target both standardized and raw structural patterns for the hidden mp4 source link
                     video_url = re.search(r'"videoUrl"\s*:\s*"(https://v1\.pinimg\.com/videos/v720p/.*?\.mp4)"', page_source)
                     if not video_url:
                         video_url = re.search(r'https://v1\.pinimg\.com/videos/.*?\.mp4', page_source)

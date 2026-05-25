@@ -41,25 +41,23 @@ if fetch_clicked:
         with st.status("Executing Stealth Bypass...", expanded=True) as status:
             try:
                 # Upgraded Options: Mimicking a real android device app connection
-                ydl_opts = {
-                    'format': 'best', # Single integrated stream for maximum compatibility
+               ydl_opts = {
+                    # Attempts high quality first, falls back to pre-merged compatible MP4 if blocked
+                    'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
+                    'merge_output_format': 'mp4',
                     'outtmpl': temp_base,
                     'cookiefile': 'cookies.txt',
                     'quiet': False,
                     'nocheckcertificate': True,
-                    'user_agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
-                    'referer': 'https://www.pinterest.com/',
-                    'extractor_args': {
-                        'pinterest': {'skip': ['dash', 'hls']} # Avoid complex formats if blocked
-                    },
+                    # Upgraded User Agent mimicking an updated desktop browser
+                    'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+                    'referer': 'https://www.youtube.com/',
                     'http_headers': {
-                        'Accept': '*/*',
-                        'Accept-Language': 'en-US,en;q=0.9',
-                        'Sec-Fetch-Mode': 'cors',
-                        'Sec-Fetch-Site': 'same-site'
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                        'Accept-Language': 'en-US,en;q=0.5',
+                        'Connection': 'keep-alive',
                     }
                 }
-
                 status.write("Piercing cloud blocks & capturing streams...")
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     ydl.download([url.strip()])

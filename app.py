@@ -2,6 +2,7 @@ import streamlit as st
 import yt_dlp
 import os
 import re
+import requests
 
 st.set_page_config(page_title="SnapFetch AI", page_icon="🚀", layout="centered")
 
@@ -34,10 +35,7 @@ if fetch_clicked:
 
         with st.status("Processing link locally...", expanded=True) as status:
             try:
-                # Force update internal extractors inside the script execution
                 ydl_opts = {
-                    # 'format': '0' or 'worst' forces yt-dlp to grab the raw progressive fallback HTTP stream 
-                    # instead of fighting with the m3u8 adaptive stream layers.
                     'format': 'best/worst/0',
                     'outtmpl': 'downloaded_video.%(ext)s',
                     'quiet': False,
@@ -47,12 +45,10 @@ if fetch_clicked:
                 }
                 
                 status.write("Analyzing page architecture...")
+                cleaned_url = url.strip()
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    # Clean up the pin.it URL structure 
-                    cleaned_url = url.strip()
                     ydl.download([cleaned_url])
 
-                # Scan folder for whatever output format dropped down
                 found_file = None
                 for ext in [".mp4", ".mkv", ".webm", ""]:
                     if os.path.exists("downloaded_video" + ext):
@@ -76,17 +72,30 @@ if fetch_clicked:
                 else:
                     status.update(label="Format Fallback Triggered", state="running")
                     status.write("Direct scraping via fallback engine...")
-                    # Ultimate fallback: extraction via direct source scraping if extractor drops the format completely
-                    import requests
-                    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
-                    r = requests.get(cleaned_url, headers=headers, allow_redirects=True)
-                    video_url = re.search(r'"videoUrl":"(https://v1\.pinimg\.com/videos/v720p/.*?\.mp4)"', r.text)
+                    
+                    headers = {
+                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+                        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+                        "Accept-Language": "en-US,en;q=0.5"
+                    }
+                    
+                    # Create a persistent session to hold headers across mobile redirects
+                    session = requests.Session()
+                    session.headers.update(headers)
+                    
+                    # Resolve short URL first
+                    response = session.get(cleaned_url, allow_redirects=True)
+                    page_source = response.text
+                    
+                    # Target both standardized and raw structural patterns for the hidden mp4 source link
+                    video_url = re.search(r'"videoUrl"\s*:\s*"(https://v1\.pinimg\.com/videos/v720p/.*?\.mp4)"', page_source)
                     if not video_url:
-                        video_url = re.search(r'https://v1\.pinimg\.com/videos/.*?\.mp4', r.text)
+                        video_url = re.search(r'https://v1\.pinimg\.com/videos/.*?\.mp4', page_source)
                     
                     if video_url:
-                        direct_mp4 = video_url.group(0).replace(r'\u0026', '&')
-                        vid_data = requests.get(direct_mp4, headers=headers).content
+                        direct_mp4 = video_url.group(0).replace(r'\u0026', '&').replace('"', '')
+                        vid_data = session.get(direct_mp4).content
+                        
                         status.update(label="Media Unlocked via Fallback Engine!", state="complete")
                         st.markdown('<div class="glass-card">', unsafe_allow_html=True)
                         st.success("Ready!")

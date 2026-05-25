@@ -36,14 +36,19 @@ if fetch_clicked:
         with st.status("Processing link locally...", expanded=True) as status:
             try:
                 ydl_opts = {
-                              'format': 'best',
-                              'outtmpl': temp_base + '.%(ext)s',
-                              'quiet': False,
-                              'nocheckcertificate': True,
-                              # ADD THESE TWO LINES BELOW 👇
-                              'cookiesfrombrowser': ('chrome',),  # Change 'chrome' to 'edge' or 'firefox' depending on what browser you use
-                              'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-                           }
+                                    'format': 'best',
+                                    'outtmpl': temp_base + '.%(ext)s',
+                                    'quiet': False,
+                                    'nocheckcertificate': True,
+                                    'cookiesfrombrowser': ('chrome',), 
+                                    'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    
+                                     # ADD THIS BLOCK BELOW 👇
+                                    'postprocessors': [{
+                                    'key': 'FFmpegVideoConvertor',
+                                    'preferedformat': 'mp4',  # Forces FFmpeg to remux/re-encode into a standard, universal MP4 layout
+                                      }],
+                                      } 
                 
                 status.write("Analyzing page architecture...")
                 cleaned_url = url.strip()

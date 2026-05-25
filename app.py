@@ -20,11 +20,11 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div style="text-align:center;"><h1>✦ SnapFetch AI</h1><p style="color:#94a3b8;">High-Quality Multi-Platform Cloud Fetcher</p></div>', unsafe_allow_html=True)
+st.markdown('<div style="text-align:center;"><h1>✦ SnapFetch AI</h1><p style="color:#94a3b8;">Universal Multi-Platform Media Downloader</p></div>', unsafe_allow_html=True)
 
 with st.container():
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    url = st.text_input("Media URL", placeholder="Paste YouTube, Facebook, or Pinterest link here...")
+    url = st.text_input("Media URL", placeholder="Paste YouTube, FB, Pinterest, or Insta link...")
     fetch_clicked = st.button("Unlock Media")
 
     if st.session_state.video_ready:
@@ -47,12 +47,12 @@ if fetch_clicked:
         st.session_state.video_ready = False
         st.session_state.video_bytes = b""
 
-        with st.status("Initializing Stealth Fetcher...", expanded=True) as status:
+        with st.status("Initializing Universal Bypass...", expanded=True) as status:
             try:
                 if os.path.exists(temp_file):
                     os.remove(temp_file)
 
-                # Yeh modern config platforms ko lagega ki request normal human browser se aa rahi hai
+                # Upgraded Options: Agar merge fail hua toh single integrated MP4 utha lega automatic
                 ydl_opts = {
                     'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
                     'merge_output_format': 'mp4',
@@ -60,29 +60,34 @@ if fetch_clicked:
                     'cookiefile': 'cookies.txt',
                     'quiet': False,
                     'nocheckcertificate': True,
-                    'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+                    'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
                     'referer': 'https://www.google.com/',
                     'http_headers': {
                         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
                         'Accept-Language': 'en-US,en;q=0.5',
-                        'Sec-Fetch-Mode': 'navigate'
+                        'Connection': 'keep-alive'
                     }
                 }
 
-                status.write("Bypassing firewalls & downloading streams...")
+                status.write("Piercing firewalls & extracting media streams...")
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     ydl.download([url])
 
+                # Agar normal download extension add nahi kar paya toh rename fallback lagaya hai
+                if not os.path.exists(temp_file) and os.path.exists(temp_base):
+                    os.rename(temp_base, temp_file)
+
                 if os.path.exists(temp_file):
-                    status.write("Finalizing high-speed conversion...")
+                    status.write("Finalizing high-speed transfer...")
                     with open(temp_file, "rb") as f:
                         st.session_state.video_bytes = f.read()
                     st.session_state.video_ready = True
-                    status.update(label="Media Ready!", state="complete")
+                    status.update(label="Media Successfully Unlocked!", state="complete")
+                    st.toast("Click the green button to download!", icon="✅")
                     st.rerun()
                 else:
-                    status.update(label="Media extraction failed.", state="error")
-                    st.error("Server block active. Please refresh cookies.txt or reboot the app.")
+                    status.update(label="Extraction blocked by platform server.", state="error")
+                    st.error("Please update cookies.txt or try a different link.")
 
             except Exception as e:
                 status.update(label="Unlock Failed", state="error")

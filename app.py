@@ -29,15 +29,18 @@ if fetch_clicked:
         temp_base = "downloaded_video"
         temp_file = f"{temp_base}.mp4"
         
-        if os.path.exists(temp_file): os.remove(temp_file)
-        if os.path.exists(temp_base): os.remove(temp_base)
+        # Clean up any leftover files from previous attempts
+        for ext in ["", ".mp4", ".mkv", ".webm"]:
+            if os.path.exists(temp_base + ext):
+                try: os.remove(temp_base + ext)
+                except: pass
 
         with st.status("Processing link locally...", expanded=True) as status:
             try:
                 ydl_opts = {
-                    # This fallback format selector handles both generic and platform-specific video packets
-                    'format': 'bestvideo+bestaudio/best',
-                    'outtmpl': temp_base,
+                    # 'best' pulls the combined standard format which Pinterest requires
+                    'format': 'best',
+                    'outtmpl': temp_base + '.%(ext)s',
                     'quiet': False,
                     'nocheckcertificate': True,
                     'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
@@ -46,13 +49,18 @@ if fetch_clicked:
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     ydl.download([url.strip()])
 
-                # Handle dynamic extension outcomes
-                if not os.path.exists(temp_file) and os.path.exists(temp_base):
-                    os.rename(temp_base, temp_file)
-                if not os.path.exists(temp_file) and os.path.exists(f"{temp_base}.mkv"):
-                    os.rename(f"{temp_base}.mkv", temp_file)
-                if not os.path.exists(temp_file) and os.path.exists(f"{temp_base}.mp4"):
-                    os.rename(f"{temp_base}.mp4", temp_file)
+                # Dynamic file finder logic to look for any extension yt-dlp dropped
+                found_file = None
+                for ext in [".mp4", ".mkv", ".webm"]:
+                    if os.path.exists(temp_base + ext):
+                        found_file = temp_base + ext
+                        break
+
+                if found_file:
+                    # Rename whatever format came down to standard mp4 for the downloader
+                    if found_file != temp_file:
+                        if os.path.exists(temp_file): os.remove(temp_file)
+                        os.rename(found_file, temp_file)
 
                 if os.path.exists(temp_file):
                     status.write("Loading file...")
@@ -66,7 +74,7 @@ if fetch_clicked:
                     st.markdown('</div>', unsafe_allow_html=True)
                 else:
                     status.update(label="Failed", state="error")
-                    st.error("File downloaded but could not be processed. Try again.")
+                    st.error("File downloaded but format conversion failed. Please try again.")
             except Exception as e:
                 status.update(label="Error", state="error")
                 st.error(f"Reason: {str(e)}")

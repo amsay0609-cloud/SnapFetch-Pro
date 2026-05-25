@@ -40,16 +40,14 @@ if fetch_clicked:
 
         with st.status("Executing Stealth Bypass...", expanded=True) as status:
             try:
-                # Upgraded Options: Mimicking a real android device app connection
-               ydl_opts = {
-                    # Attempts high quality first, falls back to pre-merged compatible MP4 if blocked
+                # Fixed spacing directly below to sit perfectly in line
+                ydl_opts = {
                     'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
                     'merge_output_format': 'mp4',
                     'outtmpl': temp_base,
                     'cookiefile': 'cookies.txt',
                     'quiet': False,
                     'nocheckcertificate': True,
-                    # Upgraded User Agent mimicking an updated desktop browser
                     'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
                     'referer': 'https://www.youtube.com/',
                     'http_headers': {
@@ -88,7 +86,7 @@ if fetch_clicked:
                     
                 else:
                     status.update(label="Platform Block Active", state="error")
-                    st.error("Pinterest blocked this specific server IP. Please reboot the app via Streamlit Dashboard.")
+                    st.error("Platform blocked this specific server IP. Please reboot the app via Streamlit Dashboard.")
                     
             except Exception as e:
                 status.update(label="System Blocked", state="error")
